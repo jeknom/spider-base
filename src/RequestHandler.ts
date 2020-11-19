@@ -4,28 +4,27 @@ import { requestConfig } from "../types";
 import Logger from './utils/Logger';
 
 export default class RequestHandler {
-  private maxConcurrentRequests: number;
-  private requestIntervalInMilliseconds: number;
+  private maxConcurrentRequests: number = 1;
+  private requestIntervalInMilliseconds: number = 1000;
   private currentRequestsCount: number = 0;
   private logger: Logger = new Logger(RequestHandler.name);
 
-  constructor(maxConcurrentRequests: number = 1, requestIntervalInMilliseconds: number = 10000) {
-    const isInvalidValue = (value: number) => value && value != -1 && value < 0;
-    const isInvalidMaxConcurrentRequestsValue = isInvalidValue(maxConcurrentRequests);
-    const isInvalidIntervalInMillisecondsValue = isInvalidValue(requestIntervalInMilliseconds);
+  constructor(maxConcurrentRequests: number, requestIntervalInMilliseconds: number) {
+    const isValidMaxConcurrentRequestsValue = maxConcurrentRequests > 0;
+    const isValidIntervalInMillisecondsValue = requestIntervalInMilliseconds > 0;
     
-    if (isInvalidMaxConcurrentRequestsValue) {
-      this.logger.logError(
-        `Invalid max concurrent request value ${maxConcurrentRequests}. Expected value bigger or equal to -1!`);
+    if (isValidMaxConcurrentRequestsValue) {
+      this.maxConcurrentRequests = maxConcurrentRequests;
+    } else {
+      this.logger.logError(`Max concurrent requests needs to be higher than zero, was ${maxConcurrentRequests}!`);
     }
 
-    if (isInvalidIntervalInMillisecondsValue) {
+    if (isValidIntervalInMillisecondsValue) {
+      this.requestIntervalInMilliseconds = requestIntervalInMilliseconds;
+    } else {
       this.logger.logError(
-        `Invalid interval in seconds value ${requestIntervalInMilliseconds}. Expected value bigger or equal to -1!`);
+        `Interval in milliseconds needs to be higher than zero, was ${requestIntervalInMilliseconds}!`);
     }
-
-    this.maxConcurrentRequests = maxConcurrentRequests || -1;
-    this.requestIntervalInMilliseconds = requestIntervalInMilliseconds || -1;
   }
 
   async handleRequests(requestConfigs: requestConfig[]): Promise<(AxiosResponse | null)[]> {
