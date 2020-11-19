@@ -4,7 +4,9 @@
   "description": "A template for creating web crawlers",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build:live",
+    "build": "tsc -p .",
+    "build:live": "nodemon --watch 'src/**/*.ts' --exec \"ts-node\" src/index.ts"
   },
   "keywords": [
     "crawler",
@@ -14,5 +16,20 @@
     "scraper"
   ],
   "author": "Johannes Palvanen",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "cheerio": "^1.0.0-rc.3",
+    "sqlite3": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node12": "^1.0.7",
+    "@types/cheerio": "^0.22.22",
+    "@types/node": "^14.14.8",
+    "@types/sqlite3": "^3.1.6",
+    "eslint": "^7.13.0",
+    "nodemon": "^2.0.6",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
+  }
 }
