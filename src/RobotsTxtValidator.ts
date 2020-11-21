@@ -28,18 +28,23 @@ export default class RobotsTxtValidator {
   }
 
   private isAllowed(value: string): boolean {
-    const userAgentsPattern = /User-agent: (?<UserAgent>.*)(?<Permissions>[a-zA-z: /*?.$=\-\n]+)(?!User-agent)/gm;
-    const matches = this.robotsTxt?.matchAll(userAgentsPattern) || [];
-    
-    for (let match of matches) {
-      const matchAgent = match.groups?.UserAgent || '';
-      
-      if (matchAgent === '*' || matchAgent === this.userAgent) {
-        const matchPermissions = match.groups?.Permissions || '';
-        const permissionsPattern = new RegExp(`[Dd]isallow: [/*]+${value}[/*$]*`);
-        const disallowedMatches = matchPermissions.match(permissionsPattern);
+    const userAgentSplit = this.robotsTxt.split('\n');
+    let currentUserAgent = '';
 
-        if (disallowedMatches && disallowedMatches.length > 0) {
+    for (var line of userAgentSplit) {
+      const agentPattern = /User-agent: (?<Name>.*)/;
+      const agentMatch = line.match(agentPattern);
+      
+      if (agentMatch && agentMatch.length > 1) {
+        currentUserAgent = agentMatch[1];
+      }
+
+      const concernsThisUser = currentUserAgent === "*" || currentUserAgent === this.userAgent;
+      
+      if (concernsThisUser) {
+        const permissionPattern = new RegExp(`Disallow: [/*]+${value}[/*?]*`);
+  
+        if ((line.match(permissionPattern)?.length || 0) > 0) {
           return false;
         }
       }
