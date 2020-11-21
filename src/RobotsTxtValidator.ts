@@ -1,35 +1,24 @@
 import { URL } from "url";
-import Logger from "./utils/Logger";
-import axios from 'axios';
 
 export default class RobotsTxtValidator {
-  private robotsTxt?: string;
-  private hasAttemptedToFetchRobotsTxt: boolean = false;
-  private logger: Logger = new Logger(RobotsTxtValidator.name);
+  private robotsTxt: string;
+  private userAgent: string;
 
-  async isUrlAllowed(url: URL): Promise<boolean> {
-    if (!this.hasAttemptedToFetchRobotsTxt) {
-      const robotsTxtUrl = `${url.origin}/robots.txt`;
-      
-      try {
-        this.hasAttemptedToFetchRobotsTxt = true;
-        const response = await axios.get(robotsTxtUrl);
-        this.robotsTxt = response.data;
-        this.logger.log(`Found robots.txt from ${robotsTxtUrl}.`);
-      } catch (error) {
-        this.logger.logWarning(`Could not fetch robots.txt from ${robotsTxtUrl}.`);
-      }
-    }
-    
-    if (this.robotsTxt && !this.isAllowedPath(url.pathname)) {
+  constructor(robotsTxt: string, userAgent?: string) {
+    this.robotsTxt = robotsTxt;
+    this.userAgent = userAgent || '*';
+  }
+
+  isUrlAllowed(url: URL): boolean {
+    if (!this.isAllowedPath(url.pathname)) {
       return false;
     }
 
     return true;
   }
 
-  private isAllowedPath(pathName: string): boolean {
-    for (let pathPart of pathName.split('/').filter(n => n !== '')) {
+  private isAllowedPath(path: string): boolean {
+    for (let pathPart of path.split('/').filter(n => n !== '')) {
       if (!this.isAllowed(pathPart)) {
         return false;
       }
@@ -39,9 +28,23 @@ export default class RobotsTxtValidator {
   }
 
   private isAllowed(value: string): boolean {
-    const expression = new RegExp(`[Dd]isallow: (\\/|\\*\\/|\\/\\*|\\/\\*\\/)${value}(\\$|$|\\/|\\/\\*|\\/\\*\\?)`);
-    const matches = this.robotsTxt?.match(expression) || [];
+    const userAgentsPattern = /User-agent: (?<UserAgent>.*)(?<Permissions>[a-zA-z: /*?.$=\-\n]+)(?!User-agent)/gm;
+    const matches = this.robotsTxt?.matchAll(userAgentsPattern) || [];
+    
+    for (let match of matches) {
+      const matchAgent = match.groups?.UserAgent || '';
+      
+      if (matchAgent === '*' || matchAgent === this.userAgent) {
+        const matchPermissions = match.groups?.Permissions || '';
+        const permissionsPattern = new RegExp(`[Dd]isallow: [/*]+${value}[/*$]*`);
+        const disallowedMatches = matchPermissions.match(permissionsPattern);
 
-    return matches.length > 0;
+        if (disallowedMatches && disallowedMatches.length > 0) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 }
