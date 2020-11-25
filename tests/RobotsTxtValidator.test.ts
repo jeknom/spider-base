@@ -1,5 +1,5 @@
 import { URL } from 'url';
-import RobotsTxtValidator from '../src/RobotsTxtValidator';
+import RobotsTxtValidator from '../src/utils/RobotsTxtValidator';
 
 const TEST_PATH_ONE = 'api';
 const TEST_PATH_TWO = 'user';
