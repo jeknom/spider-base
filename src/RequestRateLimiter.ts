@@ -3,11 +3,11 @@ import { waitUntilTrue, waitForMilliseconds } from "./utils/PromiseUtils";
 import { requestConfig } from "../types";
 import Logger from './utils/Logger';
 
-export default class RequestHandler {
+export default class RequestRateLimiter {
   private maxConcurrentRequests: number = 1;
   private requestIntervalInMilliseconds: number = 1000;
   private currentRequestsCount: number = 0;
-  private logger: Logger = new Logger(RequestHandler.name);
+  private logger: Logger = new Logger(RequestRateLimiter.name);
 
   constructor(maxConcurrentRequests: number, requestIntervalInMilliseconds: number) {
     const isValidMaxConcurrentRequestsValue = maxConcurrentRequests > 0;
@@ -25,6 +25,16 @@ export default class RequestHandler {
       this.logger.logError(
         `Interval in milliseconds needs to be higher than zero, was ${requestIntervalInMilliseconds}!`);
     }
+  }
+
+  async handleRequest(requestConfig: requestConfig): Promise<(AxiosResponse | null)> {
+    await waitUntilTrue(() => this.currentRequestsCount < this.maxConcurrentRequests);
+
+    this.logger.log("Sending a request.");
+
+    const response = await this.handleRequestInternal(requestConfig);
+
+    return response;
   }
 
   async handleRequests(requestConfigs: requestConfig[]): Promise<(AxiosResponse | null)[]> {
